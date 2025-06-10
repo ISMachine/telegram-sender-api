@@ -1,16 +1,25 @@
-// Vercel Serverless Function for Telegram Bot
+// Vercel Serverless Function for Telegram Bot with better CORS
 export default async function handler(req, res) {
-  // Set CORS headers
+  // Enhanced CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+  res.setHeader('Access-Control-Max-Age', '86400');
 
-  // Handle preflight request
+  // Handle preflight requests
   if (req.method === 'OPTIONS') {
-    return res.status(200).end();
+    res.status(200).end();
+    return;
   }
 
-  // Only allow POST requests
+  // Handle both GET and POST requests
+  if (req.method === 'GET') {
+    return res.status(200).json({ 
+      status: 'API is working',
+      timestamp: new Date().toISOString()
+    });
+  }
+
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
@@ -21,9 +30,12 @@ export default async function handler(req, res) {
     // Validate required parameters
     if (!botToken || !chatId || !message) {
       return res.status(400).json({ 
-        error: 'Missing required parameters: botToken, chatId, message' 
+        error: 'Missing required parameters',
+        required: ['botToken', 'chatId', 'message']
       });
     }
+
+    console.log('Sending to Telegram:', { chatId, messageLength: message.length });
 
     // Send to Telegram API
     const telegramResponse = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
@@ -41,21 +53,15 @@ export default async function handler(req, res) {
     const telegramData = await telegramResponse.json();
 
     if (telegramResponse.ok) {
-      // Log successful send
-      console.log('✅ Telegram message sent successfully:', {
-        messageId: telegramData.result.message_id,
-        chatId: chatId,
-        timestamp: new Date().toISOString()
-      });
-
+      console.log('✅ Telegram message sent:', telegramData.result.message_id);
+      
       return res.status(200).json({
         success: true,
         messageId: telegramData.result.message_id,
         timestamp: new Date().toISOString(),
-        data: rawData
+        chatId: chatId
       });
     } else {
-      // Telegram API error
       console.error('❌ Telegram API error:', telegramData);
       return res.status(400).json({
         success: false,
@@ -72,4 +78,4 @@ export default async function handler(req, res) {
       details: error.message
     });
   }
-}  
+}
