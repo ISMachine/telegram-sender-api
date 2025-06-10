@@ -1,0 +1,16 @@
+{
+  "name": "telegram-sender-api",
+  "version": "1.0.0",
+  "description": "Vercel API for sending Telegram messages",
+  "main": "api/send-telegram.js",
+  "scripts": {
+    "dev": "vercel dev",
+    "deploy": "vercel"
+  },
+  "dependencies": {
+    "node-fetch": "^3.3.0"
+  },
+  "engines": {
+    "node": "18.x"
+  }
+}
